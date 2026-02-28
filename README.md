@@ -1778,3 +1778,903 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+import { useState, useMemo, useEffect } from "react";
+
+// ─── SEASON DATA ──────────────────────────────────────────────────────────────
+const NASI_HRACI = ["Donát Petr","Jurenka Daniel","Zelinka Václav","Knoflíček Michal","Moravcová Petra","Jeřábek Miroslav","Mikšík Antonín","Urbanovský Petr"];
+
+const SOUPEŘI = ["Stiflerova máma Praha","Monkey z 213 Praha","Hostivar Darts Praha","Worm Gang Praha","Silent Darts Praha","Clasico My Praha","Stiflerova máma Modřany","Žíznivý důchodci Praha","Tempácký hroty Praha","Otupělé hroty Praha","Sedmá rota Praha B","PLB Praha"];
+
+const MISTNOSTI = ["5. Avenue","Club bar Pomeranč","Pivní bar Palma","Hospoda reSTART","Restaurace Alfa","Hotel Cham","Pivnice Pipkin","Hospoda 213","Jiné"];
+
+// Completed matches data
+const MATCHES_DATA = [
+  {kolo:1,datum:"07.09.2025",misto:"Club bar Pomeranč",my:"Host",soupere:"Stiflerova máma Praha",skore_my:6,skore_soupere:12,
+   hraci_my:{H1:"Jeřábek Miroslav",H2:"Zelinka Václav",H3:"Jurenka Daniel",H4:"Donát Petr",H5:"Moravcová Petra"},
+   hraci_soupere:{D1:"Kapasná Hana",D2:"Padevět Jakub",D3:"Kapasný Vít",D4:"Žižka Václav"},
+   stats:{}, singles:[{n:1,d:"D1",h:"H3",l:"1:2"},{n:2,d:"D2",h:"H4",l:"0:2"},{n:3,d:"D3",h:"H1",l:"2:0"},{n:4,d:"D4",h:"H2",l:"2:1"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H2",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:0"},{n:11,d:"D1",h:"H2",l:"0:2"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"2:0"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D4",h:"H4",l:"1:2"}],
+   dc:[{num:9,type:"D",score:"0:2",terče:[{d:"D1+D3",h:"H1+H5"},{d:"D2+D4",h:"H3+H4"}]},{num:10,type:"CR",score:"2:1",terče:[{d:"D3+D4",h:"H1+H4"},{d:"D1+D2",h:"H2+H3"},{d:"D3+D4",h:"H1+H4",rozh:true}]}]},
+  {kolo:2,datum:"14.09.2025",misto:"5. Avenue",my:"Domácí",soupere:"Monkey z 213 Praha",skore_my:9,skore_soupere:9,
+   hraci_my:{D1:"Donát Petr",D2:"Zelinka Václav",D3:"Knoflíček Michal",D4:"Jurenka Daniel"},
+   hraci_soupere:{H1:"Kolárovec Jan",H2:"Volf Lukáš",H3:"Coufal Michal",H4:"Hrad Daniel"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"2:0"},{n:2,d:"D2",h:"H4",l:"2:1"},{n:3,d:"D3",h:"H1",l:"0:2"},{n:4,d:"D4",h:"H2",l:"1:2"},{n:5,d:"D1",h:"H4",l:"2:0"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"0:2"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D2",h:"H1",l:"1:2"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"2:1"},{n:15,d:"D1",h:"H2",l:"2:0"},{n:16,d:"D2",h:"H3",l:"0:2"},{n:17,d:"D3",h:"H1",l:"2:1"},{n:18,d:"D4",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"0:2",terče:[{d:"D1+D4",h:"H1+H4"},{d:"D2+D3",h:"H2+H3"}]},{num:10,type:"CR",score:"1:2",terče:[{d:"D1+D3",h:"H3+H4"},{d:"D2+D4",h:"H1+H2"},{d:"D1+D3",h:"H3+H4",rozh:true}]}]},
+  {kolo:3,datum:"16.09.2025",misto:"Pivní bar Palma",my:"Host",soupere:"Hostivar Darts Praha",skore_my:7,skore_soupere:11,
+   hraci_my:{H1:"Knoflíček Michal",H2:"Urbanovský Petr",H3:"Moravcová Petra",H4:"Donát Petr",H5:"Jurenka Daniel"},
+   hraci_soupere:{D1:"Homola Radek",D2:"Sabo Jan",D3:"Železný Martin",D4:"Kříž František",D5:"Lukš Jiří"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"2:1"},{n:2,d:"D2",h:"H2",l:"2:0"},{n:3,d:"D3",h:"H3",l:"2:1"},{n:4,d:"D4",h:"H4",l:"2:0"},{n:5,d:"D1",h:"H2",l:"1:2"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H4",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:0"},{n:11,d:"D1",h:"H2",l:"2:1"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D3",h:"H4",l:"2:0"},{n:14,d:"D4",h:"H5",l:"0:2"},{n:15,d:"D1",h:"H3",l:"2:0"},{n:16,d:"D2",h:"H5",l:"2:0"},{n:17,d:"D3",h:"H1",l:"0:2"},{n:18,d:"D4",h:"H2",l:"2:1"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D1+D4",h:"H4+H5"},{d:"D2+D5",h:"H2+H3"}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D2+D4",h:"H2+H5"},{d:"D1+D3",h:"H1+H4"}]}]},
+  {kolo:4,datum:"28.09.2025",misto:"5. Avenue",my:"Domácí",soupere:"Worm Gang Praha",skore_my:9,skore_soupere:9,
+   hraci_my:{D1:"Jeřábek Miroslav",D2:"Donát Petr",D3:"Knoflíček Michal",D4:"Zelinka Václav",D5:"Moravcová Petra"},
+   hraci_soupere:{H1:"Novotná Hana",H2:"Koubek Martin",H3:"Dupal Jan",H4:"Kalenský Martin"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"2:1"},{n:2,d:"D2",h:"H4",l:"2:0"},{n:3,d:"D3",h:"H1",l:"2:0"},{n:4,d:"D4",h:"H2",l:"0:2"},{n:5,d:"D1",h:"H4",l:"2:0"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"0:2"},{n:11,d:"D1",h:"H2",l:"2:1"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"2:0"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"2:0"},{n:17,d:"D3",h:"H3",l:"2:1"},{n:18,d:"D4",h:"H4",l:"1:2"}],
+   dc:[{num:9,type:"D",score:"2:1",terče:[{d:"D1+D5",h:"H4+H3"},{d:"D2+D4",h:"H1+H2"},{d:"D2+D3",h:"H3+H1",rozh:true}]},{num:10,type:"CR",score:"2:1",terče:[{d:"D1+D4",h:"H2+H4"},{d:"D2+D3",h:"H1+H3"},{d:"D1+D3",h:"H2+H4",rozh:true}]}]},
+  {kolo:5,datum:"12.10.2025",misto:"Hospoda reSTART",my:"Host",soupere:"Silent Darts Praha",skore_my:4,skore_soupere:14,
+   hraci_my:{H1:"Knoflíček Michal",H2:"Zelinka Václav",H3:"Jurenka Daniel",H4:"Donát Petr"},
+   hraci_soupere:{D1:"Korábečný Petr",D2:"Kulich Pavel",D3:"Zimmermann Jakub",D4:"Várka Jan",D5:"Krupka Jiří"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"2:1"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D3",h:"H3",l:"0:2"},{n:4,d:"D4",h:"H1",l:"2:1"},{n:5,d:"D1",h:"H2",l:"0:2"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H4",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:1"},{n:11,d:"D1",h:"H2",l:"0:2"},{n:12,d:"D2",h:"H1",l:"2:0"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"0:2"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"0:2"},{n:18,d:"D4",h:"H2",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D1+D5",h:"H2+H3"},{d:"D2+D4",h:"H1+H2"}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D3+D4",h:"H1+H2"},{d:"D1+D2",h:"H2+H3"}]}]},
+  {kolo:6,datum:"19.10.2025",misto:"Restaurace Alfa",my:"Host",soupere:"Clasico My Praha",skore_my:4,skore_soupere:14,
+   hraci_my:{H1:"Moravcová Petra",H2:"Jurenka Daniel",H3:"Zelinka Václav",H4:"Donát Petr"},
+   hraci_soupere:{D1:"Selucký Josef",D2:"Šál Petr",D3:"Dlouhý Milan",D4:"Henner Martin"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"0:2"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D3",h:"H3",l:"0:2"},{n:4,d:"D4",h:"H4",l:"2:0"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H2",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:0"},{n:11,d:"D1",h:"H2",l:"0:2"},{n:12,d:"D2",h:"H1",l:"2:0"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"2:0"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"0:2"},{n:18,d:"D4",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D3+D4",h:"H2+H4"},{d:"D1+D2",h:"H1+H3"}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D1+D3",h:"H1+H2"},{d:"D2+D4",h:"H3+H4"}]}]},
+  {kolo:7,datum:"02.11.2025",misto:"5. Avenue",my:"Domácí",soupere:"Stiflerova máma Modřany",skore_my:14,skore_soupere:4,
+   hraci_my:{D1:"Donát Petr",D2:"Jurenka Daniel",D3:"Knoflíček Michal",D4:"Zelinka Václav",D5:"Jeřábek Miroslav"},
+   hraci_soupere:{H1:"Kabátek Václav",H2:"Dvořák Aleš",H3:"Bělohlávek Václav",H4:"Pitelka Vladimír",H5:"Peková Žaneta"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"2:0"},{n:2,d:"D2",h:"H4",l:"1:2"},{n:3,d:"D3",h:"H1",l:"2:1"},{n:4,d:"D4",h:"H2",l:"1:2"},{n:5,d:"D1",h:"H4",l:"2:0"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"2:0"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D2",h:"H5",l:"2:0"},{n:13,d:"D3",h:"H4",l:"2:0"},{n:14,d:"D5",h:"H3",l:"1:2"},{n:15,d:"D1",h:"H5",l:"2:1"},{n:16,d:"D2",h:"H2",l:"2:0"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D5",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"2:1",terče:[{d:"D3+D5",h:"H3+H4"},{d:"D1+D2",h:"H1+H5"},{d:"D1+D3",h:"H1+H4",rozh:true}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D4+D5",h:"H2+H3"},{d:"D1+D3",h:"H1+H4"}]}]},
+  {kolo:9,datum:"23.11.2025",misto:"5. Avenue",my:"Domácí",soupere:"Žíznivý důchodci Praha",skore_my:12,skore_soupere:6,
+   hraci_my:{D1:"Donát Petr",D2:"Jurenka Daniel",D3:"Zelinka Václav",D4:"Moravcová Petra"},
+   hraci_soupere:{H1:"Janeček Petr",H2:"Zeman Jiří",H3:"Neoveský Jan",H4:"Červinka Michal",H5:"Šťastný Petr"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"2:0"},{n:2,d:"D2",h:"H4",l:"2:0"},{n:3,d:"D3",h:"H1",l:"2:1"},{n:4,d:"D4",h:"H2",l:"2:0"},{n:5,d:"D1",h:"H4",l:"2:1"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"0:2"},{n:11,d:"D1",h:"H2",l:"2:1"},{n:12,d:"D2",h:"H3",l:"0:2"},{n:13,d:"D3",h:"H4",l:"2:0"},{n:14,d:"D4",h:"H5",l:"2:0"},{n:15,d:"D1",h:"H5",l:"2:1"},{n:16,d:"D2",h:"H2",l:"2:0"},{n:17,d:"D3",h:"H3",l:"2:1"},{n:18,d:"D4",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"2:1",terče:[{d:"D3+D4",h:"H5+H1"},{d:"D1+D2",h:"H3+H4"},{d:"D1+D3",h:"H5+H3",rozh:true}]},{num:10,type:"CR",score:"2:1",terče:[{d:"D2+D4",h:"H1+H4"},{d:"D1+D3",h:"H5+H3"},{d:"D1+D3",h:"H1+H4",rozh:true}]}]},
+  {kolo:10,datum:"07.12.2025",misto:"Hotel Cham",my:"Host",soupere:"Tempácký hroty Praha",skore_my:6,skore_soupere:12,
+   hraci_my:{H1:"Zelinka Václav",H2:"Jurenka Daniel",H3:"Knoflíček Michal",H4:"Donát Petr",H5:"Mikšík Antonín"},
+   hraci_soupere:{D1:"Kejvalová Natálie",D2:"Michlík Michal",D3:"Pytlíček Martin",D4:"Michlík Michal 71",D5:"Trajhan Jáchym"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"0:2"},{n:2,d:"D2",h:"H4",l:"0:2"},{n:3,d:"D3",h:"H1",l:"0:2"},{n:4,d:"D4",h:"H2",l:"2:1"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H2",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:1"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D5",h:"H2",l:"0:2"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D5",h:"H3",l:"2:1"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"0:2"},{n:18,d:"D5",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D1+D3",h:"H1+H3"},{d:"D4+D5",h:"H2+H4"}]},{num:10,type:"CR",score:"1:2",terče:[{d:"D2+D4",h:"H3+H4"},{d:"D1+D3",h:"H1+H2"},{d:"D1+D3",h:"H3+H4",rozh:true}]}]},
+  {kolo:11,datum:"14.12.2025",misto:"5. Avenue",my:"Host",soupere:"Otupělé hroty Praha",skore_my:3,skore_soupere:15,
+   hraci_my:{H1:"Zelinka Václav",H2:"Jurenka Daniel",H3:"Knoflíček Michal",H4:"Donát Petr"},
+   hraci_soupere:{D1:"Novák Petr",D2:"Jirásek Jiří",D3:"Kripner Tomáš",D4:"Zelenková Michaela",D5:"Jirásek Jiří",D6:"Verner Jiří"},
+   stats:{},singles:[{n:1,d:"D3",h:"H1",l:"2:0"},{n:2,d:"D1",h:"H2",l:"2:0"},{n:3,d:"D3",h:"H3",l:"2:0"},{n:4,d:"D1",h:"H4",l:"1:2"},{n:5,d:"D3",h:"H2",l:"2:1"},{n:6,d:"D1",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H4",l:"2:0"},{n:8,d:"D1",h:"H4",l:"2:1"},{n:11,d:"D6",h:"H1",l:"2:1"},{n:12,d:"D1",h:"H2",l:"2:0"},{n:13,d:"D3",h:"H4",l:"2:0"},{n:14,d:"D3",h:"H3",l:"2:1"},{n:15,d:"D3",h:"H1",l:"2:0"},{n:16,d:"D1",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D1",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"1:2",terče:[{d:"D1+D3",h:"H3+H6"},{d:"D2+D4",h:"H1+H5"},{d:"D3+D4",h:"H3+H5",rozh:true}]},{num:10,type:"CR",score:"1:2",terče:[{d:"D1+D2",h:"H4+H6"},{d:"D3+D4",h:"H3+H5"},{d:"D1+D2",h:"H4+H6",rozh:true}]}]},
+  {kolo:12,datum:"21.12.2025",misto:"Pivnice Pipkin",my:"Host",soupere:"Sedmá rota Praha B",skore_my:3,skore_soupere:15,
+   hraci_my:{H1:"Jeřábek Miroslav",H2:"Knoflíček Michal",H3:"Zelinka Václav",H4:"Jurenka Daniel"},
+   hraci_soupere:{D1:"Královič Martin",D2:"Knotek Václav",D3:"Hamšík Robert",D4:"Puková Jaroslava",D5:"Polák Michal",D8:"Zbořil Karel"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"2:0"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D1",h:"H3",l:"0:2"},{n:4,d:"D4",h:"H4",l:"2:1"},{n:5,d:"D1",h:"H2",l:"2:0"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D1",h:"H4",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:1"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D3",h:"H4",l:"2:0"},{n:14,d:"D5",h:"H3",l:"0:2"},{n:15,d:"D1",h:"H1",l:"2:0"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D4",h:"H4",l:"2:1"}],
+   dc:[{num:9,type:"D",score:"2:1",terče:[{d:"D1+D5",h:"H1+H2"},{d:"D3+D4",h:"H3+H4"},{d:"D1+D2",h:"H2+H3",rozh:true}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D4+D8",h:"H1+H4"},{d:"D1+D2",h:"H2+H3"}]}]},
+  {kolo:13,datum:"04.01.2026",misto:"5. Avenue",my:"Domácí",soupere:"PLB Praha",skore_my:8,skore_soupere:10,
+   hraci_my:{D1:"Donát Petr",D2:"Jurenka Daniel",D3:"Knoflíček Michal",D4:"Zelinka Václav"},
+   hraci_soupere:{H1:"Žáček Jan",H2:"Littman Petr",H3:"Hrachovina Matěj",H4:"Novák Ondřej"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"2:0"},{n:2,d:"D2",h:"H4",l:"0:2"},{n:3,d:"D3",h:"H1",l:"2:0"},{n:4,d:"D4",h:"H2",l:"0:2"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"0:2"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"2:0"},{n:15,d:"D1",h:"H1",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"0:2"},{n:18,d:"D4",h:"H4",l:"2:0"}],
+   dc:[{num:9,type:"D",score:"0:2",terče:[{d:"D1+D3",h:"H1+H4"},{d:"D2+D4",h:"H2+H3"}]},{num:10,type:"CR",score:"2:1",terče:[{d:"D1+D3",h:"H3+H4"},{d:"D2+D4",h:"H1+H2"},{d:"D1+D3",h:"H2+H3",rozh:true}]}]},
+  {kolo:14,datum:"11.01.2026",misto:"5. Avenue",my:"Domácí",soupere:"Stiflerova máma Praha",skore_my:14,skore_soupere:4,
+   hraci_my:{D1:"Donát Petr",D2:"Jurenka Daniel",D3:"Knoflíček Michal",D4:"Zelinka Václav"},
+   hraci_soupere:{H1:"Větrovec Tomáš",H2:"Vrňata Tomáš",H3:"Kapasný Vít",H4:"Žižka Václav"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"2:0"},{n:2,d:"D2",h:"H4",l:"2:0"},{n:3,d:"D3",h:"H1",l:"2:0"},{n:4,d:"D4",h:"H2",l:"1:2"},{n:5,d:"D1",h:"H4",l:"2:0"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"1:2"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D2",h:"H1",l:"2:1"},{n:13,d:"D3",h:"H4",l:"2:0"},{n:14,d:"D4",h:"H3",l:"2:0"},{n:15,d:"D1",h:"H5",l:"2:0"},{n:16,d:"D2",h:"H2",l:"2:0"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D4",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"1:2",terče:[{d:"D1+D2",h:"H1+H4"},{d:"D3+D4",h:"H2+H3"},{d:"D1+D3",h:"H1+H2",rozh:true}]},{num:10,type:"CR",score:"2:1",terče:[{d:"D1+D3",h:"H1+H2"},{d:"D2+D4",h:"H3+H4"},{d:"D1+D3",h:"H2+H3",rozh:true}]}]},
+  {kolo:15,datum:"25.01.2026",misto:"Hospoda 213",my:"Host",soupere:"Monkey z 213 Praha",skore_my:9,skore_soupere:9,
+   hraci_my:{H1:"Knoflíček Michal",H2:"Jurenka Daniel",H3:"Donát Petr",H4:"Zelinka Václav"},
+   hraci_soupere:{D1:"Hrad Daniel",D2:"Kolárovec Jan",D3:"Hrad Daniel",D4:"Coufal Michal",D6:"Pastorčák Lukáš"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"0:2"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D3",h:"H3",l:"0:2"},{n:4,d:"D4",h:"H4",l:"2:1"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H2",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:1"},{n:11,d:"D6",h:"H2",l:"2:1"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D1",h:"H4",l:"0:2"},{n:14,d:"D3",h:"H3",l:"0:2"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D4",h:"H4",l:"2:1"}],
+   dc:[{num:9,type:"D",score:"0:2",terče:[{d:"D3+D4",h:"H1+H4"},{d:"D2+D6",h:"H2+H3"}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D4+D6",h:"H2+H4"},{d:"D2+D3",h:"H1+H3"}]}]},
+  {kolo:16,datum:"01.02.2026",misto:"5. Avenue",my:"Domácí",soupere:"Hostivar Darts Praha",skore_my:2,skore_soupere:16,
+   hraci_my:{D1:"Zelinka Václav",D2:"Mikšík Antonín",D3:"Jurenka Daniel",D4:"Knoflíček Michal"},
+   hraci_soupere:{H1:"Železný Martin",H2:"Sabo Jan",H3:"Kříž František",H4:"Homola Radek",H5:"Roza Adam"},
+   stats:{},singles:[{n:1,d:"D1",h:"H3",l:"0:2"},{n:2,d:"D2",h:"H4",l:"0:2"},{n:3,d:"D3",h:"H1",l:"0:2"},{n:4,d:"D4",h:"H2",l:"0:2"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H2",l:"0:2"},{n:8,d:"D4",h:"H1",l:"1:2"},{n:11,d:"D1",h:"H2",l:"0:2"},{n:12,d:"D2",h:"H1",l:"0:2"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H3",l:"2:0"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"0:2"},{n:18,d:"D4",h:"H4",l:"0:2"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D1+D2",h:"H1+H2"},{d:"D3+D4",h:"H4+H5"}]},{num:10,type:"CR",score:"1:2",terče:[{d:"D2+D3",h:"H1+H4"},{d:"D1+D4",h:"H2+H3"},{d:"D2+D3",h:"H1+H4",rozh:true}]}]},
+  {kolo:17,datum:"08.02.2026",misto:"5. Avenue",my:"Host",soupere:"Worm Gang Praha",skore_my:5,skore_soupere:13,
+   hraci_my:{H1:"Knoflíček Michal",H2:"Zelinka Václav",H3:"Jurenka Daniel",H4:"Donát Petr",H5:"Mikšík Antonín"},
+   hraci_soupere:{D1:"Novotná Hana",D2:"Koubek Martin",D3:"Zazvonil Zdeněk",D4:"Dolínek Václav",D5:"Kalenský Martin"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"0:2"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D3",h:"H3",l:"2:0"},{n:4,d:"D4",h:"H4",l:"2:0"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"2:1"},{n:7,d:"D3",h:"H2",l:"2:0"},{n:8,d:"D4",h:"H1",l:"2:0"},{n:11,d:"D1",h:"H2",l:"2:0"},{n:12,d:"D2",h:"H3",l:"2:0"},{n:13,d:"D3",h:"H4",l:"0:2"},{n:14,d:"D4",h:"H1",l:"2:0"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"0:2"},{n:18,d:"D4",h:"H4",l:"2:0"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D3+D5",h:"H1+H5"},{d:"D1+D4",h:"H1+H4"}]},{num:10,type:"CR",score:"2:0",terče:[{d:"D2+D3",h:"H2+H5"},{d:"D1+D4",h:"H1+H4"}]}]},
+  {kolo:18,datum:"15.02.2026",misto:"Hospoda reSTART",my:"Host",soupere:"Silent Darts Praha",skore_my:8,skore_soupere:10,
+   hraci_my:{H1:"Zelinka Václav",H2:"Kulich Pavel",H3:"Benko Zdeněk",H4:"Várka Jan",H5:"Andr Jan"},
+   hraci_soupere:{D1:"Zelinka Václav",D2:"Moravcová Petra",D3:"Knoflíček Michal",D4:"Donát Petr"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"0:2"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D3",h:"H3",l:"2:0"},{n:4,d:"D4",h:"H4",l:"0:2"},{n:5,d:"D1",h:"H2",l:"0:2"},{n:6,d:"D2",h:"H3",l:"0:2"},{n:7,d:"D3",h:"H4",l:"0:2"},{n:8,d:"D4",h:"H1",l:"2:0"},{n:11,d:"D1",h:"H2",l:"0:2"},{n:12,d:"D2",h:"H1",l:"2:0"},{n:13,d:"D3",h:"H3",l:"2:0"},{n:14,d:"D4",h:"H4",l:"0:2"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D4",h:"H4",l:"2:1"}],
+   dc:[{num:9,type:"D",score:"1:2",terče:[{d:"D1+D4",h:"H2+H5"},{d:"D2+D3",h:"H3+H4"},{d:"D3+D4",h:"H3+H5",rozh:true}]},{num:10,type:"CR",score:"2:1",terče:[{d:"D1+D2",h:"H2+H4"},{d:"D3+D4",h:"H3+H5"},{d:"D1+D2",h:"H2+H4",rozh:true}]}]},
+  {kolo:19,datum:"22.02.2026",misto:"Restaurace Alfa",my:"Host",soupere:"Clasico My Praha",skore_my:6,skore_soupere:12,
+   hraci_my:{H1:"Donát Petr",H2:"Jurenka Daniel",H3:"Zelinka Václav",H4:"Knoflíček Michal"},
+   hraci_soupere:{D1:"Selucký Josef",D2:"Šál Petr",D3:"Dlouhý Milan",D4:"Knoflíček Michal",D5:"Turnwald Jindřich"},
+   stats:{},singles:[{n:1,d:"D1",h:"H1",l:"0:2"},{n:2,d:"D2",h:"H2",l:"0:2"},{n:3,d:"D3",h:"H3",l:"0:2"},{n:4,d:"D4",h:"H4",l:"0:2"},{n:5,d:"D1",h:"H4",l:"0:2"},{n:6,d:"D2",h:"H3",l:"2:0"},{n:7,d:"D3",h:"H2",l:"0:2"},{n:8,d:"D4",h:"H1",l:"1:2"},{n:11,d:"D1",h:"H1",l:"2:0"},{n:12,d:"D2",h:"H2",l:"0:2"},{n:13,d:"D3",h:"H3",l:"2:0"},{n:14,d:"D4",h:"H4",l:"0:2"},{n:15,d:"D1",h:"H5",l:"0:2"},{n:16,d:"D2",h:"H2",l:"0:2"},{n:17,d:"D3",h:"H3",l:"2:0"},{n:18,d:"D4",h:"H4",l:"2:0"}],
+   dc:[{num:9,type:"D",score:"2:0",terče:[{d:"D3+D4",h:"H1+H4"},{d:"D1+D4",h:"H1+H2"}]},{num:10,type:"CR",score:"1:2",terče:[{d:"D2+D3",h:"H4+H5"},{d:"D1+D4",h:"H1+H2"},{d:"D2+D3",h:"H4+H5",rozh:true}]}]},
+];
+
+// Future matches (kolo 20-26)
+const FUTURE_MATCHES = [
+  {kolo:20,datum:"",misto:"",soupere:"Tempácký hroty Praha",my:"Domácí"},
+  {kolo:21,datum:"",misto:"",soupere:"Otupělé hroty Praha",my:"Host"},
+  {kolo:22,datum:"",misto:"",soupere:"Sedmá rota Praha B",my:"Domácí"},
+  {kolo:23,datum:"",misto:"",soupere:"PLB Praha",my:"Host"},
+  {kolo:24,datum:"",misto:"",soupere:"Žíznivý důchodci Praha",my:"Host"},
+  {kolo:25,datum:"",misto:"",soupere:"Stiflerova máma Modřany",my:"Domácí"},
+  {kolo:26,datum:"",misto:"",soupere:"Worm Gang Praha",my:"Domácí"},
+];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function getResult(m){
+  if(!m.skore_my&&m.skore_my!==0) return null;
+  if(m.skore_my>m.skore_soupere) return "V";
+  if(m.skore_my<m.skore_soupere) return "P";
+  return "R";
+}
+
+function parseLegy(l){
+  if(!l||!l.includes(":")) return [null,null];
+  return l.split(":").map(Number);
+}
+
+function resolvePos(pos, hraci, my, m){
+  // pos like "D1","H3" — look up in correct dict
+  if(my==="Domácí"){
+    if(pos.startsWith("D")) return hraci[pos]||pos;
+    return (m.hraci_soupere||{})[pos]||pos;
+  } else {
+    if(pos.startsWith("H")) return hraci[pos]||pos;
+    return (m.hraci_soupere||{})[pos]||pos;
+  }
+}
+
+function resolvePair(pairStr, m){
+  const positions = pairStr.split("+");
+  return positions.map(p => {
+    if(p.startsWith("D")) return m.hraci_soupere?.[p] || (m.hraci_my?.[p]) || p;
+    return m.hraci_my?.[p] || (m.hraci_soupere?.[p]) || p;
+  }).join(" + ");
+}
+
+// Compute player stats from all matches
+function computeStats(){
+  const stats = {};
+  NASI_HRACI.forEach(p => stats[p] = {zapasy:0,vyhry:0,prohry:0,remizy:0,legy_pro:0,legy_proti:0,n95:0,n133:0,n170:0,body:0});
+  
+  MATCHES_DATA.forEach(m => {
+    const myKey = m.my==="Domácí" ? "D" : "H";
+    
+    // Singles
+    m.singles.forEach(z => {
+      let ourPos = myKey==="D" ? z.d : z.h;
+      let theirPos = myKey==="D" ? z.h : z.d;
+      let playerName = m.hraci_my?.[ourPos];
+      if(!playerName || !stats[playerName]) return;
+      
+      const [dl,hl] = parseLegy(z.l);
+      if(dl===null) return;
+      const [ourL, theirL] = myKey==="D" ? [dl,hl] : [hl,dl];
+      
+      stats[playerName].zapasy++;
+      stats[playerName].legy_pro += ourL;
+      stats[playerName].legy_proti += theirL;
+      if(ourL>theirL){ stats[playerName].vyhry++; stats[playerName].body+=2; }
+      else if(ourL<theirL){ stats[playerName].prohry++; }
+      else{ stats[playerName].remizy++; stats[playerName].body+=1; }
+    });
+    
+    // Stats
+    if(m.stats) Object.entries(m.stats).forEach(([name,s])=>{
+      if(stats[name]){
+        stats[name].n95 += s.n95||0;
+        stats[name].n133 += s.n133||0;
+        stats[name].n170 += s.n170||0;
+      }
+    });
+  });
+  
+  return stats;
+}
+
+// ─── COMPONENTS ───────────────────────────────────────────────────────────────
+const COLORS = {
+  bg:"#0a0f1e", card:"#111827", mid:"#1e293b", border:"#1e3a5f",
+  gold:"#f59e0b", green:"#10b981", red:"#ef4444", draw:"#6366f1",
+  text:"#e2e8f0", muted:"#64748b", white:"#ffffff",
+  domBg:"#0f2a1a", hostBg:"#0f0f2a",
+  domAcc:"#10b981", hostAcc:"#818cf8",
+};
+
+const css = {
+  app: {fontFamily:"'JetBrains Mono', 'Fira Code', monospace", background:COLORS.bg, minHeight:"100vh", color:COLORS.text},
+  header: {background:"linear-gradient(135deg,#0f172a,#1e3a5f)", borderBottom:`1px solid ${COLORS.border}`, padding:"12px 20px", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap"},
+  nav: {display:"flex", gap:8, flexWrap:"wrap"},
+  navBtn: (active)=>({background:active?"#1d4ed8":"transparent", border:`1px solid ${active?"#3b82f6":COLORS.border}`, color:active?COLORS.white:COLORS.muted, padding:"6px 14px", borderRadius:6, cursor:"pointer", fontSize:13, fontFamily:"inherit"}),
+  card: {background:COLORS.card, border:`1px solid ${COLORS.border}`, borderRadius:8, padding:"12px 16px", marginBottom:12},
+  table: {width:"100%", borderCollapse:"collapse", fontSize:12},
+  th: (bg)=>({background:bg||"#1d4ed8", color:COLORS.white, padding:"8px 10px", textAlign:"center", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", border:`1px solid ${COLORS.border}`, userSelect:"none"}),
+  td: (bg)=>({background:bg||COLORS.mid, padding:"7px 10px", textAlign:"center", border:`1px solid #1a2a3a`, fontSize:12}),
+  badge: (type)=>{
+    const map = {V:{bg:"#14532d",c:"#86efac"},P:{bg:"#7f1d1d",c:"#fca5a5"},R:{bg:"#1e3a8a",c:"#93c5fd"}};
+    const s = map[type]||{bg:COLORS.mid,c:COLORS.muted};
+    return {background:s.bg, color:s.c, padding:"2px 8px", borderRadius:4, fontWeight:700, fontSize:11};
+  },
+  input: {background:"#0f172a", border:`1px solid ${COLORS.border}`, color:COLORS.text, padding:"6px 10px", borderRadius:6, fontFamily:"inherit", fontSize:13, width:"100%", boxSizing:"border-box"},
+  select: {background:"#0f172a", border:`1px solid ${COLORS.border}`, color:COLORS.text, padding:"6px 10px", borderRadius:6, fontFamily:"inherit", fontSize:13, width:"100%", boxSizing:"border-box"},
+  label: {color:COLORS.muted, fontSize:11, display:"block", marginBottom:4},
+  section: {margin:"0 0 8px 0"},
+  btn: (variant)=>{
+    const map = {primary:{bg:"#1d4ed8",c:COLORS.white},success:{bg:"#14532d",c:"#86efac"},danger:{bg:"#7f1d1d",c:"#fca5a5"},ghost:{bg:"transparent",c:COLORS.muted,border:`1px solid ${COLORS.border}`}};
+    const s = map[variant]||map.primary;
+    return {background:s.bg, color:s.c, border:s.border||"none", padding:"7px 16px", borderRadius:6, cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:600};
+  },
+};
+
+// Match row result color
+function matchRowStyle(result){
+  if(result==="V") return {background:"#0d2a1a"};
+  if(result==="P") return {background:"#1a0d0d"};
+  if(result==="R") return {background:"#0d0d2a"};
+  return {background:COLORS.card};
+}
+
+function resultStyle(result){
+  if(result==="V") return {...css.badge("V"), display:"inline-block"};
+  if(result==="P") return {...css.badge("P"), display:"inline-block"};
+  if(result==="R") return {...css.badge("R"), display:"inline-block"};
+  return {};
+}
+
+// ─── MATCH LIST VIEW ──────────────────────────────────────────────────────────
+function SeasonView({onSelect}){
+  const [filter, setFilter] = useState("all");
+  const played = MATCHES_DATA;
+  const totals = useMemo(()=>({
+    z:played.length,
+    v:played.filter(m=>getResult(m)==="V").length,
+    p:played.filter(m=>getResult(m)==="P").length,
+    r:played.filter(m=>getResult(m)==="R").length,
+    body_my: played.reduce((s,m)=>s+m.skore_my,0),
+    body_op: played.reduce((s,m)=>s+m.skore_soupere,0),
+  }),[]);
+  
+  const filtered = filter==="all" ? played : played.filter(m=>getResult(m)===filter);
+  
+  return (
+    <div style={{padding:"16px 20px"}}>
+      {/* Summary panels */}
+      <div style={{display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:8, marginBottom:16}}>
+        {[
+          {label:"ZÁPASŮ", val:totals.z, bg:COLORS.card},
+          {label:"VÝHER", val:totals.v, bg:"#0d2a1a", c:"#86efac"},
+          {label:"PROHER", val:totals.p, bg:"#1a0d0d", c:"#fca5a5"},
+          {label:"REMÍZ", val:totals.r, bg:"#0d0d2a", c:"#93c5fd"},
+          {label:"BODY MY", val:totals.body_my, bg:COLORS.card, c:COLORS.gold},
+          {label:"% VÝHER", val:`${Math.round(totals.v/Math.max(1,totals.v+totals.p)*100)}%`, bg:"#2a1a3a", c:"#c4b5fd"},
+        ].map(({label,val,bg,c})=>(
+          <div key={label} style={{background:bg, border:`1px solid ${COLORS.border}`, borderRadius:8, padding:"10px 12px", textAlign:"center"}}>
+            <div style={{fontSize:10, color:COLORS.muted, marginBottom:4}}>{label}</div>
+            <div style={{fontSize:24, fontWeight:700, color:c||COLORS.text}}>{val}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Filter */}
+      <div style={{display:"flex", gap:8, marginBottom:12}}>
+        {[["all","Vše"],["V","Výhry"],["P","Prohry"],["R","Remízy"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setFilter(k)} style={css.navBtn(filter===k)}>{l}</button>
+        ))}
+      </div>
+      
+      {/* Matches table */}
+      <div style={{overflowX:"auto"}}>
+        <table style={css.table}>
+          <thead>
+            <tr>
+              {["Kolo","Datum","Místo","D/H","Soupeř","Výsledek","Body","Legy","Detail"].map(h=>(
+                <th key={h} style={{...css.th(), fontSize:11}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(m=>{
+              const res = getResult(m);
+              return (
+                <tr key={m.kolo} style={matchRowStyle(res)}>
+                  <td style={css.td()}><b style={{color:COLORS.gold}}>{m.kolo}</b></td>
+                  <td style={css.td()}>{m.datum}</td>
+                  <td style={{...css.td(), textAlign:"left"}}>{m.misto}</td>
+                  <td style={css.td()}>{m.my==="Domácí"?"🏠 D":"✈️ H"}</td>
+                  <td style={{...css.td(), textAlign:"left", fontWeight:600}}>{m.soupere}</td>
+                  <td style={css.td()}><span style={resultStyle(res)}>{res}</span></td>
+                  <td style={{...css.td(), fontWeight:700, color:res==="V"?"#86efac":res==="P"?"#fca5a5":"#93c5fd"}}>
+                    {m.skore_my}:{m.skore_soupere}
+                  </td>
+                  <td style={css.td()}>
+                    {(() => {
+                      const lp = m.singles.reduce((s,z)=>{const [d,h]=parseLegy(z.l); return s+(m.my==="Domácí"?(d||0):(h||0));},0);
+                      const lo = m.singles.reduce((s,z)=>{const [d,h]=parseLegy(z.l); return s+(m.my==="Domácí"?(h||0):(d||0));},0);
+                      return <span style={{color:COLORS.muted}}>{lp}:{lo}</span>;
+                    })()}
+                  </td>
+                  <td style={css.td()}>
+                    <button onClick={()=>onSelect(m.kolo)} style={{...css.btn("ghost"), padding:"3px 10px", fontSize:11}}>📋</button>
+                  </td>
+                </tr>
+              );
+            })}
+            {/* Future matches */}
+            {FUTURE_MATCHES.map(m=>(
+              <tr key={m.kolo} style={{background:"#0a0f1e", opacity:0.6}}>
+                <td style={{...css.td(), color:COLORS.muted}}><b>{m.kolo}</b></td>
+                <td style={{...css.td(), color:COLORS.muted}}>TBD</td>
+                <td style={{...css.td(), color:COLORS.muted}}>—</td>
+                <td style={{...css.td(), color:COLORS.muted}}>{m.my==="Domácí"?"🏠 D":"✈️ H"}</td>
+                <td style={{...css.td(), textAlign:"left", color:COLORS.muted}}>{m.soupere}</td>
+                <td style={css.td()}>—</td><td style={css.td()}>—</td><td style={css.td()}>—</td>
+                <td style={css.td()}><span style={{color:COLORS.muted, fontSize:11}}>plánováno</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── DC BLOCK COMPONENT ───────────────────────────────────────────────────────
+function DCBlock({dc, m}){
+  const typLabel = dc.type==="D" ? "🎯 DOUBLE" : "🏏 CRICKET";
+  const [ds,hs] = dc.score.split(":").map(Number);
+  const myWon = m.my==="Domácí" ? ds>hs : hs>ds;
+  const scoreColor = myWon ? "#86efac" : ds===hs ? "#93c5fd" : "#fca5a5";
+  const blockBg = dc.type==="D" ? "#0a2a1a" : "#1a0a2a";
+  const accentColor = dc.type==="D" ? "#10b981" : "#a78bfa";
+  
+  return (
+    <tr>
+      <td colSpan={8} style={{padding:0, border:`1px solid ${COLORS.border}`}}>
+        <div style={{background:blockBg, padding:"10px 14px"}}>
+          {/* Header row */}
+          <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8}}>
+            <div style={{display:"flex", alignItems:"center", gap:10}}>
+              <span style={{background:accentColor, color:"#000", padding:"2px 8px", borderRadius:4, fontSize:11, fontWeight:700}}>m{dc.num}</span>
+              <span style={{color:accentColor, fontWeight:700, fontSize:13}}>{typLabel}</span>
+            </div>
+            <div style={{display:"flex", alignItems:"center", gap:8}}>
+              <span style={{color:COLORS.muted, fontSize:11}}>
+                {m.my==="Domácí" ? "Domácí":"Hosté"} {dc.score} {m.my==="Domácí" ? "Hosté":"Domácí"}
+              </span>
+              <span style={{fontSize:18, fontWeight:700, color:scoreColor, background:"rgba(0,0,0,0.3)", padding:"2px 10px", borderRadius:4}}>
+                {dc.score}
+              </span>
+            </div>
+          </div>
+          
+          {/* Terče */}
+          <div style={{display:"flex", flexDirection:"column", gap:6}}>
+            {dc.terče.map((t,i)=>{
+              const label = t.rozh ? "⚡ ROZHODUJÍCÍ" : `TERČ ${i+1}`;
+              const terčBg = t.rozh ? "rgba(251,191,36,0.1)" : (i===0 ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.15)");
+              const labelColor = t.rozh ? COLORS.gold : COLORS.muted;
+              
+              const domPair = m.my==="Domácí" ? t.d : t.h;
+              const hostPair = m.my==="Domácí" ? t.h : t.d;
+              
+              const domPlayers = domPair.split("+").map(p=>{
+                if(m.my==="Domácí") return m.hraci_my?.[p]||p;
+                return m.hraci_soupere?.[p]||p;
+              });
+              const hostPlayers = hostPair.split("+").map(p=>{
+                if(m.my==="Domácí") return m.hraci_soupere?.[p]||p;
+                return m.hraci_my?.[p]||p;
+              });
+              
+              return (
+                <div key={i} style={{background:terčBg, border:`1px solid rgba(255,255,255,0.05)`, borderRadius:6, padding:"8px 12px", display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:8, alignItems:"center"}}>
+                  {/* Domácí side */}
+                  <div style={{background:COLORS.domBg, borderRadius:5, padding:"6px 10px"}}>
+                    <div style={{color:COLORS.domAcc, fontSize:10, fontWeight:700, marginBottom:3}}>🏠 {domPair}</div>
+                    {domPlayers.map((p,j)=>(
+                      <div key={j} style={{color:COLORS.white, fontSize:12}}>{p}</div>
+                    ))}
+                  </div>
+                  
+                  {/* Label */}
+                  <div style={{textAlign:"center"}}>
+                    <div style={{color:labelColor, fontSize:10, fontWeight:700, whiteSpace:"nowrap"}}>{label}</div>
+                    <div style={{color:COLORS.muted, fontSize:11}}>vs</div>
+                  </div>
+                  
+                  {/* Hosté side */}
+                  <div style={{background:COLORS.hostBg, borderRadius:5, padding:"6px 10px"}}>
+                    <div style={{color:COLORS.hostAcc, fontSize:10, fontWeight:700, marginBottom:3}}>✈️ {hostPair}</div>
+                    {hostPlayers.map((p,j)=>(
+                      <div key={j} style={{color:COLORS.white, fontSize:12}}>{p}</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ─── SINGLE ROW ───────────────────────────────────────────────────────────────
+function SingleRow({z, m, idx}){
+  const myKey = m.my==="Domácí" ? "D" : "H";
+  const ourPos = myKey==="D" ? z.d : z.h;
+  const theirPos = myKey==="D" ? z.h : z.d;
+  const ourName = m.hraci_my?.[ourPos] || ourPos;
+  const theirName = m.hraci_soupere?.[theirPos] || theirPos;
+  
+  const [dl,hl] = parseLegy(z.l);
+  const [ourL,theirL] = myKey==="D" ? [dl,hl] : [hl,dl];
+  const won = ourL>theirL; const lost = ourL<theirL;
+  
+  const rowBg = won ? "#0d1f0d" : lost ? "#1f0d0d" : (idx%2===0 ? COLORS.mid : "#16213e");
+  
+  return (
+    <tr style={{background:rowBg}}>
+      <td style={{...css.td(rowBg), color:COLORS.muted, fontSize:11}}>{z.n}</td>
+      <td style={{...css.td(rowBg), color:COLORS.muted, fontSize:11}}>Single</td>
+      <td style={{...css.td(COLORS.domBg), textAlign:"left", color:COLORS.white}}>{z.d}: {m.my==="Domácí"?ourName:theirName}</td>
+      <td style={{...css.td(COLORS.hostBg), textAlign:"left", color:COLORS.white}}>{z.h}: {m.my==="Domácí"?theirName:ourName}</td>
+      <td style={{...css.td(rowBg), fontWeight:700, fontSize:14, color:won?"#86efac":lost?"#fca5a5":"#e2e8f0"}}>{z.l}</td>
+      <td style={{...css.td(COLORS.domBg), fontWeight:700, color:won?"#86efac":"#fca5a5"}}>{ourL}</td>
+      <td style={{...css.td(COLORS.hostBg), fontWeight:700, color:!won?"#86efac":"#fca5a5"}}>{theirL}</td>
+      <td style={{...css.td(rowBg)}}>{won?"✅":"❌"}</td>
+    </tr>
+  );
+}
+
+// ─── MATCH DETAIL VIEW ────────────────────────────────────────────────────────
+function MatchDetail({kolo, onBack, onEdit}){
+  const m = useMemo(()=>MATCHES_DATA.find(x=>x.kolo===kolo),[kolo]);
+  if(!m) return <div style={{padding:20}}>Zápas nenalezen</div>;
+  
+  const res = getResult(m);
+  const resBg = res==="V"?"#0d2a1a":res==="P"?"#2a0d0d":"#0d0d2a";
+  const resColor = res==="V"?"#86efac":res==="P"?"#fca5a5":"#93c5fd";
+  const domName = m.my==="Domácí"?"5. Avenue Praha":m.soupere;
+  const hostName = m.my==="Domácí"?m.soupere:"5. Avenue Praha";
+  const domScore = m.my==="Domácí"?m.skore_my:m.skore_soupere;
+  const hostScore = m.my==="Domácí"?m.skore_soupere:m.skore_my;
+  
+  // Build ordered matches: singles 1-8, dc m9, dc m10, singles 11-18
+  const singles_1_8 = m.singles.filter(z=>z.n<=8).sort((a,b)=>a.n-b.n);
+  const singles_11_18 = m.singles.filter(z=>z.n>=11).sort((a,b)=>a.n-b.n);
+  
+  const ourLegy = m.singles.reduce((s,z)=>{const [d,h]=parseLegy(z.l); return s+(m.my==="Domácí"?(d||0):(h||0));},0);
+  const theirLegy = m.singles.reduce((s,z)=>{const [d,h]=parseLegy(z.l); return s+(m.my==="Domácí"?(h||0):(d||0));},0);
+  
+  return (
+    <div style={{padding:"16px 20px"}}>
+      <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:16}}>
+        <button onClick={onBack} style={css.btn("ghost")}>← Zpět</button>
+        <h2 style={{margin:0, color:COLORS.gold, fontSize:16}}>Kolo {kolo}</h2>
+        {onEdit && <button onClick={onEdit} style={css.btn("primary")}>✏️ Upravit</button>}
+      </div>
+      
+      {/* Match header */}
+      <div style={{background:resBg, border:`2px solid ${resColor}`, borderRadius:10, padding:"14px 18px", marginBottom:14}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8}}>
+          <div style={{color:COLORS.muted, fontSize:12}}>📅 {m.datum} &nbsp;|&nbsp; 📍 {m.misto}</div>
+          <div style={{...css.badge(res), fontSize:13, padding:"4px 12px"}}>{res==="V"?"✅ VÝHRA":res==="P"?"❌ PROHRA":"⚖️ REMÍZA"}</div>
+        </div>
+        <div style={{display:"grid", gridTemplateColumns:"1fr auto 1fr", alignItems:"center", gap:12, marginTop:10}}>
+          <div style={{background:COLORS.domBg, borderRadius:8, padding:"10px 14px"}}>
+            <div style={{color:COLORS.domAcc, fontSize:10, fontWeight:700}}>🏠 DOMÁCÍ</div>
+            <div style={{fontSize:18, fontWeight:700, color:COLORS.white, marginTop:2}}>{domName}</div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:32, fontWeight:700, color:COLORS.gold}}>{domScore}:{hostScore}</div>
+            <div style={{color:COLORS.muted, fontSize:10}}>celkové skóre</div>
+          </div>
+          <div style={{background:COLORS.hostBg, borderRadius:8, padding:"10px 14px", textAlign:"right"}}>
+            <div style={{color:COLORS.hostAcc, fontSize:10, fontWeight:700}}>✈️ HOSTÉ</div>
+            <div style={{fontSize:18, fontWeight:700, color:COLORS.white, marginTop:2}}>{hostName}</div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Roster */}
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14}}>
+        <div style={{background:COLORS.domBg, borderRadius:8, padding:"10px 14px"}}>
+          <div style={{color:COLORS.domAcc, fontSize:11, fontWeight:700, marginBottom:6}}>
+            👥 {m.my==="Domácí"?"NÁŠ TÝM":"SOUPEŘ"} – {domName}
+          </div>
+          {Object.entries(m.my==="Domácí"?m.hraci_my:m.hraci_soupere).map(([pos,name])=>(
+            <div key={pos} style={{display:"flex", gap:8, padding:"3px 0", borderBottom:`1px solid rgba(255,255,255,0.05)`}}>
+              <span style={{color:COLORS.domAcc, fontSize:11, minWidth:28, fontWeight:700}}>{pos}</span>
+              <span style={{color:COLORS.white, fontSize:12}}>{name}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{background:COLORS.hostBg, borderRadius:8, padding:"10px 14px"}}>
+          <div style={{color:COLORS.hostAcc, fontSize:11, fontWeight:700, marginBottom:6}}>
+            👥 {m.my==="Host"?"NÁŠ TÝM":"SOUPEŘ"} – {hostName}
+          </div>
+          {Object.entries(m.my==="Host"?m.hraci_my:m.hraci_soupere).map(([pos,name])=>(
+            <div key={pos} style={{display:"flex", gap:8, padding:"3px 0", borderBottom:`1px solid rgba(255,255,255,0.05)`}}>
+              <span style={{color:COLORS.hostAcc, fontSize:11, minWidth:28, fontWeight:700}}>{pos}</span>
+              <span style={{color:COLORS.white, fontSize:12}}>{name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Match table */}
+      <div style={{overflowX:"auto"}}>
+        <table style={{...css.table, borderRadius:8, overflow:"hidden"}}>
+          <thead>
+            <tr>
+              <th style={{...css.th(), width:30}}>#</th>
+              <th style={{...css.th(), width:60}}>Typ</th>
+              <th style={{...css.th("rgba(16,56,26,0.8)")}}>🏠 Domácí</th>
+              <th style={{...css.th("rgba(16,16,56,0.8)")}}>✈️ Hosté</th>
+              <th style={{...css.th(), width:55}}>Legy</th>
+              <th style={{...css.th("rgba(16,56,26,0.8)"), width:45}}>D</th>
+              <th style={{...css.th("rgba(16,16,56,0.8)"), width:45}}>H</th>
+              <th style={{...css.th(), width:30}}>✓</th>
+            </tr>
+          </thead>
+          <tbody>
+            {singles_1_8.map((z,i)=><SingleRow key={z.n} z={z} m={m} idx={i}/>)}
+            {m.dc.filter(d=>d.num===9).map(dc=><DCBlock key={9} dc={dc} m={m}/>)}
+            {m.dc.filter(d=>d.num===10).map(dc=><DCBlock key={10} dc={dc} m={m}/>)}
+            {singles_11_18.map((z,i)=><SingleRow key={z.n} z={z} m={m} idx={i}/>)}
+            {/* Totals */}
+            <tr style={{background:resBg, border:`2px solid ${resColor}`}}>
+              <td colSpan={5} style={{...css.td(resBg), textAlign:"left", fontWeight:700, color:resColor, fontSize:13}}>
+                VÝSLEDEK: {res==="V"?"✅ VÝHRA":res==="P"?"❌ PROHRA":"⚖️ REMÍZA"} | 5. Avenue {m.skore_my}:{m.skore_soupere} {m.soupere}
+              </td>
+              <td style={{...css.td(COLORS.domBg), fontWeight:700, fontSize:16, color:COLORS.domAcc}}>{ourLegy}</td>
+              <td style={{...css.td(COLORS.hostBg), fontWeight:700, fontSize:16, color:COLORS.hostAcc}}>{theirLegy}</td>
+              <td style={{...css.td(resBg), fontWeight:700, color:resColor}}>{m.skore_my}:{m.skore_soupere}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── STATISTICS VIEW ──────────────────────────────────────────────────────────
+function StatisticsView(){
+  const [sortKey, setSortKey] = useState("vyhry");
+  const [sortDir, setSortDir] = useState("desc");
+  
+  const stats = useMemo(()=>computeStats(),[]);
+  
+  const rows = useMemo(()=>{
+    return Object.entries(stats)
+      .map(([name,s])=>({
+        name,
+        ...s,
+        pct: s.vyhry+s.prohry > 0 ? Math.round(s.vyhry/(s.vyhry+s.prohry)*100) : 0,
+        legy_diff: s.legy_pro - s.legy_proti,
+      }))
+      .sort((a,b)=>sortDir==="asc" ? a[sortKey]-b[sortKey] : b[sortKey]-a[sortKey]);
+  },[sortKey, sortDir, stats]);
+  
+  const handleSort = (k)=>{
+    if(sortKey===k) setSortDir(d=>d==="asc"?"desc":"asc");
+    else { setSortKey(k); setSortDir("desc"); }
+  };
+  
+  const sortIcon = (k) => sortKey===k ? (sortDir==="asc"?"↑":"↓") : "↕";
+  
+  const cols = [
+    {key:"name",label:"Hráč",num:false},
+    {key:"zapasy",label:"Utkání",num:true},
+    {key:"vyhry",label:"Výhry",num:true},
+    {key:"prohry",label:"Prohry",num:true},
+    {key:"remizy",label:"Remízy",num:true},
+    {key:"pct",label:"% Výher",num:true},
+    {key:"body",label:"Body",num:true},
+    {key:"legy_pro",label:"Legy pro",num:true},
+    {key:"legy_proti",label:"Legy proti",num:true},
+    {key:"legy_diff",label:"±Legy",num:true},
+    {key:"n95",label:"95+",num:true},
+    {key:"n133",label:"133+",num:true},
+    {key:"n170",label:"170+",num:true},
+  ];
+  
+  return (
+    <div style={{padding:"16px 20px"}}>
+      <div style={{marginBottom:12}}>
+        <h2 style={{margin:"0 0 4px", color:COLORS.gold, fontSize:16}}>📊 Statistiky hráčů – 3. Liga N 2025/2026</h2>
+        <div style={{color:COLORS.muted, fontSize:11}}>Klikni na záhlaví sloupce pro řazení</div>
+      </div>
+      
+      <div style={{overflowX:"auto"}}>
+        <table style={css.table}>
+          <thead>
+            <tr>
+              <th style={{...css.th(), width:24, textAlign:"left", paddingLeft:8}}>#</th>
+              {cols.map(c=>(
+                <th key={c.key} onClick={()=>c.num&&handleSort(c.key)} style={{...css.th(c.num?undefined:"#2d3748"), cursor:c.num?"pointer":"default", minWidth:c.key==="name"?120:50}}>
+                  {c.label} {c.num && <span style={{opacity:0.6, fontSize:10}}>{sortIcon(c.key)}</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r,i)=>{
+              const rowBg = i%2===0?COLORS.mid:COLORS.card;
+              return (
+                <tr key={r.name} style={{background:rowBg}}>
+                  <td style={{...css.td(rowBg), color:COLORS.gold, fontWeight:700, fontSize:11}}>{i+1}</td>
+                  <td style={{...css.td(rowBg), textAlign:"left", fontWeight:600, color:COLORS.white}}>{r.name}</td>
+                  <td style={css.td(rowBg)}>{r.zapasy}</td>
+                  <td style={{...css.td(rowBg), color:"#86efac", fontWeight:700}}>{r.vyhry}</td>
+                  <td style={{...css.td(rowBg), color:"#fca5a5"}}>{r.prohry}</td>
+                  <td style={css.td(rowBg)}>{r.remizy}</td>
+                  <td style={{...css.td(rowBg), color:r.pct>=50?"#86efac":r.pct>=30?"#fbbf24":"#fca5a5", fontWeight:700}}>
+                    {r.pct}%
+                  </td>
+                  <td style={{...css.td(rowBg), color:COLORS.gold, fontWeight:700}}>{r.body}</td>
+                  <td style={{...css.td(COLORS.domBg), color:COLORS.domAcc}}>{r.legy_pro}</td>
+                  <td style={{...css.td(COLORS.hostBg), color:COLORS.hostAcc}}>{r.legy_proti}</td>
+                  <td style={{...css.td(rowBg), color:r.legy_diff>0?"#86efac":r.legy_diff<0?"#fca5a5":COLORS.muted, fontWeight:r.legy_diff!==0?700:400}}>
+                    {r.legy_diff>0?"+":""}{r.legy_diff}
+                  </td>
+                  <td style={{...css.td(rowBg), color:r.n95>0?COLORS.gold:COLORS.muted, fontWeight:r.n95>0?700:400}}>{r.n95||"—"}</td>
+                  <td style={{...css.td(rowBg), color:r.n133>0?"#f97316":COLORS.muted, fontWeight:r.n133>0?700:400}}>{r.n133||"—"}</td>
+                  <td style={{...css.td(rowBg), color:r.n170>0?"#ef4444":COLORS.muted, fontWeight:r.n170>0?700:400}}>{r.n170||"—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── NEW MATCH FORM ───────────────────────────────────────────────────────────
+function NewMatchForm({onBack}){
+  const defaultPlayers = {D1:"",D2:"",D3:"",D4:"",D5:""};
+  const defaultOppPlayers = {H1:"",H2:"",H3:"",H4:"",H5:""};
+  
+  const [form, setForm] = useState({
+    kolo:"", datum:"", misto:"", my:"Domácí", soupere:"",
+    hraci_my: {...defaultPlayers}, hraci_soupere: {...defaultOppPlayers},
+  });
+  
+  const [singles, setSingles] = useState({});
+  const [dcScores, setDcScores] = useState({9:"",10:""});
+  
+  const update = (field, val) => setForm(f=>({...f,[field]:val}));
+  const updatePlayer = (side, pos, val) => setForm(f=>({...f,[side]:{...f[side],[pos]:val}}));
+  
+  const isCzDate = form.datum ? form.datum.replace(/-/g,'.').split('.').reverse().join('.') : '';
+  const dateVal = form.datum;
+  
+  const ownSide = form.my==="Domácí" ? "D" : "H";
+  const oppSide = form.my==="Domácí" ? "H" : "D";
+  
+  // Standard 5A match layout
+  const singlesLayout = [
+    {n:1,d:"D1",h:"H3"},{n:2,d:"D2",h:"H4"},{n:3,d:"D3",h:"H1"},{n:4,d:"D4",h:"H2"},
+    {n:5,d:"D1",h:"H4"},{n:6,d:"D2",h:"H3"},{n:7,d:"D3",h:"H2"},{n:8,d:"D4",h:"H1"},
+    {n:11,d:"D1",h:"H2"},{n:12,d:"D2",h:"H1"},{n:13,d:"D3",h:"H4"},{n:14,d:"D4",h:"H3"},
+    {n:15,d:"D1",h:"H5"},{n:16,d:"D2",h:"H2"},{n:17,d:"D3",h:"H3"},{n:18,d:"D4",h:"H4"},
+  ];
+  
+  const scoreOptions = ["","2:0","2:1","1:2","0:2"];
+  
+  const fg = {padding:"0 20px 20px"};
+  
+  return (
+    <div style={{padding:"16px 20px"}}>
+      <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:16}}>
+        <button onClick={onBack} style={css.btn("ghost")}>← Zpět</button>
+        <h2 style={{margin:0, color:COLORS.gold, fontSize:16}}>📝 Nový / Upravit zápas</h2>
+      </div>
+      
+      {/* Meta info */}
+      <div style={{...css.card, display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12}}>
+        <div>
+          <label style={css.label}>Kolo</label>
+          <input type="number" min="1" max="26" value={form.kolo} onChange={e=>update("kolo",e.target.value)} style={css.input}/>
+        </div>
+        <div>
+          <label style={css.label}>📅 Datum</label>
+          <input type="date" value={dateVal} onChange={e=>update("datum",e.target.value)} 
+            style={{...css.input, colorScheme:"dark"}}/>
+        </div>
+        <div>
+          <label style={css.label}>🏠 / ✈️ Hrajeme jako</label>
+          <select value={form.my} onChange={e=>update("my",e.target.value)} style={css.select}>
+            <option>Domácí</option>
+            <option>Host</option>
+          </select>
+        </div>
+        <div>
+          <label style={css.label}>⚔️ Soupeř</label>
+          <select value={form.soupere} onChange={e=>update("soupere",e.target.value)} style={css.select}>
+            <option value="">— vybrat soupeře —</option>
+            {SOUPEŘI.map(s=><option key={s}>{s}</option>)}
+          </select>
+        </div>
+        <div style={{gridColumn:"2 / 4"}}>
+          <label style={css.label}>📍 Místo</label>
+          <select value={form.misto} onChange={e=>update("misto",e.target.value)} style={css.select}>
+            <option value="">— vybrat místo —</option>
+            {MISTNOSTI.map(s=><option key={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+      
+      {/* Rosters */}
+      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12}}>
+        <div style={{...css.card, background:COLORS.domBg}}>
+          <div style={{color:COLORS.domAcc, fontWeight:700, fontSize:12, marginBottom:10}}>
+            🏠 {form.my==="Domácí"?"NÁŠ TÝM (Domácí)":"SOUPEŘ (Domácí)"}
+          </div>
+          {["D1","D2","D3","D4","D5"].map(pos=>(
+            <div key={pos} style={{display:"flex", alignItems:"center", gap:8, marginBottom:6}}>
+              <span style={{color:COLORS.domAcc, width:24, fontWeight:700, fontSize:12}}>{pos}</span>
+              {form.my==="Domácí" ? (
+                <select value={form.hraci_my[pos]} onChange={e=>updatePlayer("hraci_my",pos,e.target.value)} style={{...css.select, flex:1}}>
+                  <option value="">— hráč —</option>
+                  {NASI_HRACI.map(h=><option key={h}>{h}</option>)}
+                </select>
+              ) : (
+                <input placeholder="Jméno hráče" value={form.hraci_soupere[pos]||""} 
+                  onChange={e=>updatePlayer("hraci_soupere",pos,e.target.value)} style={{...css.input, flex:1}}/>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{...css.card, background:COLORS.hostBg}}>
+          <div style={{color:COLORS.hostAcc, fontWeight:700, fontSize:12, marginBottom:10}}>
+            ✈️ {form.my==="Host"?"NÁŠ TÝM (Hosté)":"SOUPEŘ (Hosté)"}
+          </div>
+          {["H1","H2","H3","H4","H5"].map(pos=>(
+            <div key={pos} style={{display:"flex", alignItems:"center", gap:8, marginBottom:6}}>
+              <span style={{color:COLORS.hostAcc, width:24, fontWeight:700, fontSize:12}}>{pos}</span>
+              {form.my==="Host" ? (
+                <select value={form.hraci_my[pos]||""} onChange={e=>updatePlayer("hraci_my",pos,e.target.value)} style={{...css.select, flex:1}}>
+                  <option value="">— hráč —</option>
+                  {NASI_HRACI.map(h=><option key={h}>{h}</option>)}
+                </select>
+              ) : (
+                <input placeholder="Jméno hráče" value={form.hraci_soupere[pos]||""} 
+                  onChange={e=>updatePlayer("hraci_soupere",pos,e.target.value)} style={{...css.input, flex:1}}/>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Match table */}
+      <div style={css.card}>
+        <div style={{color:COLORS.gold, fontWeight:700, fontSize:12, marginBottom:10}}>📋 VÝSLEDKY ZÁPASŮ</div>
+        
+        <div style={{overflowX:"auto"}}>
+          <table style={css.table}>
+            <thead>
+              <tr>
+                <th style={{...css.th(), width:30}}>#</th>
+                <th style={{...css.th(), width:60}}>Typ</th>
+                <th style={{...css.th(COLORS.domBg)}}>Domácí</th>
+                <th style={{...css.th(COLORS.hostBg)}}>Hosté</th>
+                <th style={{...css.th(), width:100}}>Skóre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {singlesLayout.filter(z=>z.n<=8).map(z=>{
+                const dName = form.hraci_my?.[form.my==="Domácí"?z.d:z.h] || (form.hraci_soupere?.[form.my==="Host"?z.d:z.h]) || z.d;
+                const hName = form.hraci_my?.[form.my==="Host"?z.h:null] || form.hraci_soupere?.[form.my==="Domácí"?z.h:null] || z.h;
+                const bg = z.n%2===0?COLORS.mid:COLORS.card;
+                return (
+                  <tr key={z.n} style={{background:bg}}>
+                    <td style={css.td(bg)}>{z.n}</td>
+                    <td style={{...css.td(bg), color:COLORS.muted, fontSize:11}}>Single</td>
+                    <td style={{...css.td(COLORS.domBg), textAlign:"left"}}>{z.d}: {form.hraci_my?.[z.d]||form.hraci_soupere?.[z.d]||z.d}</td>
+                    <td style={{...css.td(COLORS.hostBg), textAlign:"left"}}>{z.h}: {form.hraci_my?.[z.h]||form.hraci_soupere?.[z.h]||z.h}</td>
+                    <td style={css.td(bg)}>
+                      <select value={singles[z.n]||""} onChange={e=>setSingles(s=>({...s,[z.n]:e.target.value}))} style={{...css.select, padding:"3px 6px", fontSize:12}}>
+                        {scoreOptions.map(o=><option key={o||"x"}>{o}</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+              
+              {/* Double block */}
+              <tr style={{background:"#0a2a1a"}}>
+                <td colSpan={5} style={{padding:"10px 14px"}}>
+                  <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+                    <span style={{color:"#10b981", fontWeight:700}}>m9 🎯 DOUBLE — Terč 1: D1+D3 vs H1+H5 | Terč 2: D2+D4 vs H3+H4</span>
+                    <select value={dcScores[9]} onChange={e=>setDcScores(s=>({...s,9:e.target.value}))} style={{...css.select, width:"auto", padding:"3px 10px"}}>
+                      {scoreOptions.map(o=><option key={o||"x"}>{o}</option>)}
+                    </select>
+                  </div>
+                  {(dcScores[9]==="2:1"||dcScores[9]==="1:2") && (
+                    <div style={{marginTop:6, color:COLORS.gold, fontSize:11}}>⚡ Rozhodující terč: D3+D4 vs H1+H4</div>
+                  )}
+                </td>
+              </tr>
+              
+              {/* Cricket block */}
+              <tr style={{background:"#1a0a2a"}}>
+                <td colSpan={5} style={{padding:"10px 14px"}}>
+                  <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+                    <span style={{color:"#a78bfa", fontWeight:700}}>m10 🏏 CRICKET — Terč 1: D3+D4 vs H1+H4 | Terč 2: D1+D2 vs H2+H3</span>
+                    <select value={dcScores[10]} onChange={e=>setDcScores(s=>({...s,10:e.target.value}))} style={{...css.select, width:"auto", padding:"3px 10px"}}>
+                      {scoreOptions.map(o=><option key={o||"x"}>{o}</option>)}
+                    </select>
+                  </div>
+                  {(dcScores[10]==="2:1"||dcScores[10]==="1:2") && (
+                    <div style={{marginTop:6, color:COLORS.gold, fontSize:11}}>⚡ Rozhodující terč: D3+D4 vs H1+H4</div>
+                  )}
+                </td>
+              </tr>
+              
+              {singlesLayout.filter(z=>z.n>=11).map(z=>{
+                const bg = z.n%2===0?COLORS.mid:COLORS.card;
+                return (
+                  <tr key={z.n} style={{background:bg}}>
+                    <td style={css.td(bg)}>{z.n}</td>
+                    <td style={{...css.td(bg), color:COLORS.muted, fontSize:11}}>Single</td>
+                    <td style={{...css.td(COLORS.domBg), textAlign:"left"}}>{z.d}: {form.hraci_my?.[z.d]||form.hraci_soupere?.[z.d]||z.d}</td>
+                    <td style={{...css.td(COLORS.hostBg), textAlign:"left"}}>{z.h}: {form.hraci_my?.[z.h]||form.hraci_soupere?.[z.h]||z.h}</td>
+                    <td style={css.td(bg)}>
+                      <select value={singles[z.n]||""} onChange={e=>setSingles(s=>({...s,[z.n]:e.target.value}))} style={{...css.select, padding:"3px 6px", fontSize:12}}>
+                        {scoreOptions.map(o=><option key={o||"x"}>{o}</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        
+        <div style={{display:"flex", gap:8, marginTop:12, justifyContent:"flex-end"}}>
+          <button onClick={onBack} style={css.btn("ghost")}>Zrušit</button>
+          <button style={css.btn("success")}>💾 Uložit zápas</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function App(){
+  const [view, setView] = useState("season"); // season | match | stats | new
+  const [selectedKolo, setSelectedKolo] = useState(null);
+  
+  const navItems = [
+    {id:"season",label:"📅 Přehled sezóny"},
+    {id:"stats",label:"📊 Statistiky"},
+    {id:"new",label:"➕ Nový zápas"},
+  ];
+  
+  return (
+    <div style={css.app}>
+      {/* Header */}
+      <div style={css.header}>
+        <div style={{display:"flex", alignItems:"center", gap:10}}>
+          <span style={{fontSize:24}}>🎯</span>
+          <div>
+            <div style={{fontWeight:700, fontSize:15, color:COLORS.gold}}>5. Avenue Praha</div>
+            <div style={{fontSize:11, color:COLORS.muted}}>3. Liga N · 2025/2026</div>
+          </div>
+        </div>
+        <nav style={css.nav}>
+          {navItems.map(n=>(
+            <button key={n.id} onClick={()=>setView(n.id)} style={css.navBtn(view===n.id && n.id!=="match")}>
+              {n.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+      
+      {/* Content */}
+      {view==="season" && (
+        <SeasonView onSelect={(kolo)=>{setSelectedKolo(kolo); setView("match");}}/>
+      )}
+      {view==="match" && selectedKolo && (
+        <MatchDetail kolo={selectedKolo} onBack={()=>setView("season")}/>
+      )}
+      {view==="stats" && <StatisticsView/>}
+      {view==="new" && <NewMatchForm onBack={()=>setView("season")}/>}
+    </div>
+  );
+}
